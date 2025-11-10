@@ -1,0 +1,74 @@
+export interface Action {
+  type: string;
+  payload: any;
+}
+
+export type Reducer<State> = (arg0: State, arg1: Action) => State;
+
+export type EffectHandler<State> = (
+  arg0: Action,
+  arg1: State,
+  arg3: (action: Action) => void
+) => void;
+
+export class Store<State> {
+  state: State;
+  reducers: [RegExp, Reducer<State>][];
+  effectHandlers: [RegExp, EffectHandler<State>][];
+  subscribers: ((state: State, action: Action, prevState: State) => void)[];
+
+  constructor(state: State) {
+    this.state = state;
+    this.reducers = [];
+    this.effectHandlers = [];
+    this.subscribers = [];
+    this.dispatch = this.dispatch.bind(this);
+  }
+
+  subscribe(fn: (state: State, action: Action, prevState: State) => void) {
+    this.subscribers.push(fn);
+    return () => (this.subscribers = this.subscribers.filter((f) => f !== fn));
+  }
+
+  dispatch(action: Action) {
+    let prev = this.state;
+    // console.log("BEFORE STATE:", this.state);
+
+    // console.log("ACTION:", action);
+
+    for (let [pat, red] of this.reducers) {
+      if (pat.test(action.type)) {
+        this.state = red(this.state, action);
+      }
+    }
+
+    if (this.state !== prev) {
+      for (const fn of this.subscribers) fn(this.state, action, prev);
+    }
+
+    // console.log("AFTER STATE:", this.state);
+
+    for (let [pat, eff] of this.effectHandlers) {
+      if (pat.test(action.type)) {
+        eff(action, this.state, this.dispatch.bind(this));
+      }
+    }
+  }
+
+  on(
+    pattern: RegExp | string,
+    reducer: Reducer<State> | null = null,
+    effectHandler: EffectHandler<State> | null = null
+  ) {
+    if (typeof pattern === "string") {
+      const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      pattern = new RegExp(`^${escaped}$`);
+    }
+    if (reducer) {
+      this.reducers.push([pattern, reducer]);
+    }
+    if (effectHandler) {
+      this.effectHandlers.push([pattern, effectHandler]);
+    }
+  }
+}

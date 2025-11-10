@@ -1,0 +1,27 @@
+{
+  "name": "datasheet",
+  "version": "0.0.0",
+  "description": "A highly optimized, google-docs like spreadsheet component for snabbdom",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -noEmit && tsx scripts/build.ts",
+    "serve": "tsx scripts/serve.ts"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "github.com/zoravur/datasheet"
+  },
+  "author": "Zoravur Singh",
+  "license": "MIT",
+  "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "esbuild-plugin-tsc": "^0.5.0",
+    "tsx": "^4.20.6"
+  },
+  "dependencies": {
+    "snabbdom": "^3.6.3",
+    "type-fest": "^5.2.0"
+  }
+}
