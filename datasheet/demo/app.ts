@@ -6,7 +6,7 @@ import {
   eventListenersModule,
   h,
 } from "snabbdom";
-import store from "./store";
+import { store } from "./store";
 
 const patch = init([
   classModule,

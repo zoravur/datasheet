@@ -16,3 +16,5 @@ r[base coordinate] -- relative coordinate (relative to top left visible point)
 
 variables:
 (scroll_ax, scroll_ay) -- current scroll offset
+
+a "grid vector" is either a grid row or column.
