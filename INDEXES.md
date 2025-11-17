@@ -26,5 +26,5 @@ or library users actually need.
 +------------------+-------------------+--------------------+
 | Reorder          |               Yes |                 No |
 | ModifyDimension  |               Yes |                 No |
-| ModifyGlobalDim  |               Yes |                 No |
+| ModifyGlobalDim  |               Yes |                Yes |
 +------------------+-------------------+--------------------+

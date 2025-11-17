@@ -4,42 +4,45 @@ import {
   // type GridViewModel,
   makeVirtualRowSet,
   makeVirtualColSet,
-} from "./models/Grid";
+} from "./providers/Grid";
 import { type ViewportModel, makeViewportModel } from "./models/Viewport";
 import type { CellViewModel, FormatSpec, CellHandle } from "./models/Cell";
 
-import { Width, Height, As, I, J } from "../types";
+import { Width, Height, As, A, I, J, X, Y } from "../types";
 import { Datum } from "../../demo/mockApi/FieldTypes";
+import { Index } from "./Index";
 
-interface ViewModel {
-  grid: GridViewModel;
-  resolveCellView: (handle: CellHandle) => CellViewModel;
+interface ViewModel<RH, CH> {
+  viewportModel: ViewportModel;
+  resolveCellView: (
+    handle: CellHandle<RH, CH> // TODO: Can parameterize this, or remove type parameters altogether
+  ) => CellViewModel<RH, CH>;
 }
 
 interface DataProvider<RH, CH> {
-  getCell(row: RH, col: CH): Datum;
+  getDatum(row: RH, col: CH): Datum;
+  updateDatum(row: RH, col: CH, datum: Datum): void;
 }
+
 interface FormatProvider<RH, CH> {
   getFormat(row: RH, col: CH, value: Datum): FormatSpec;
+  // updateFormat(row: RH, col: CH, )
 }
 
-type HeadlessDatasheet = {
-  view: () => ViewModel;
+type HeadlessDatasheet<RH, CH, HIndex, VIndex> = {
+  view: () => ViewModel<RH, CH>;
 
-  updateColumnWidth(colId: ColHandle, width: Width): void;
-  updateRowHeight(rowId: RowHandle, height: Height): void;
+  // updateColumnWidth(colId: CH, width: Width): void; not always implemented
+  // updateRowHeight(rowId: RH, height: Height): void; not always implemented
 
-  updatePinnedRows(
-    updateFn: (frozenRows: Set<RowHandle>) => Set<RowHandle>
-  ): void;
-  updatePinnedCols(
-    updateFn: (frozenCols: Set<ColHandle>) => Set<ColHandle>
-  ): void;
+  // updatePinnedRows(updateFn: (frozenRows: Set<RH>) => Set<RH>): void; not always implemented
+  // updatePinnedCols(updateFn: (frozenCols: Set<CH>) => Set<CH>): void; not always implemented
 
-  updateViewportDims(dims: { vw?: Width; vh?: Height }): void;
+  updateViewportScroll(dims: { sx: A<X>; sy: A<Y> }): void;
+  updateViewportDims(dims: { vw: Width; vh: Height }): void;
 
-  updateCellFormat(handle: CellHandle, fmt: Partial<FormatSpec>): void;
-  updateCellData(handle: CellHandle, datum: Datum): void;
+  // updateCellFormat(handle: CellHandle<RH, CH>, fmt: Partial<FormatSpec>): void; not always implemented
+  updateCellData(handle: CellHandle<RH, CH>, datum: Datum): void;
 };
 
 type HeadlessDatasheetConfig = {
@@ -47,27 +50,26 @@ type HeadlessDatasheetConfig = {
   columnWidth: Width;
 };
 
-export const makeHeadlessDatasheet = (
-  dataProvider: DataProvider,
-  formatProvider: FormatProvider,
+export const makeHeadlessDatasheet = <RH, CH>(
+  dataProvider: DataProvider<RH, CH>,
+  formatProvider: FormatProvider<RH, CH>,
+  horizontalIndex: Index<Width, CH, X>,
+  verticalIndex: Index<Height, RH, Y>,
   config: HeadlessDatasheetConfig
-): HeadlessDatasheet => {
-  const viewModel: ViewModel = {
-    grid: {
-      rows: makeVirtualRowSet((i: I) => ({ i, h: config.rowHeight })),
-      cols: makeVirtualColSet((j: J) => ({ j, w: config.columnWidth })),
-      pinnedRows: new Set(),
-      pinnedCols: new Set(),
-    },
-    resolveCellView: (handle): CellViewModel => {
-      const { i, j } = handle;
-      const value = dataProvider.getCell(i, j);
-      const formatting = formatProvider.getFormat(i, j, value);
+): HeadlessDatasheet<RH, CH, typeof horizontalIndex, typeof verticalIndex> => {
+  const viewportModel = makeViewportModel();
 
+  const viewModel: ViewModel<RH, CH> = {
+    viewportModel,
+    resolveCellView: (handle: CellHandle<RH, CH>) => {
+      const { rh, ch } = handle;
+
+      const datum = dataProvider.getDatum(rh, ch);
+      const formatting = formatProvider.getFormat(rh, ch, datum);
       return {
-        datum: value,
-        formatting: formatting,
-        handle: handle,
+        datum,
+        formatting,
+        handle,
       };
     },
   };
@@ -77,35 +79,27 @@ export const makeHeadlessDatasheet = (
       return viewModel;
     },
 
-    updateColumnWidth: (colId: ColHandle, width: Width): void => {
-      viewModel.grid.cols.patch(colId, { w: width });
+    // updateColumnWidth: (colId: ColHandle, width: Width): void => {
+    //   viewModel.grid.cols.patch(colId, { w: width });
+    // },
+    // updateRowHeight: (rowId: RowHandle, height: Height): void => {},
+
+    updateViewportScroll: ({ sx, sy }): void => {
+      viewModel.viewportModel.sx = sx;
+      viewModel.viewportModel.sy = sy;
     },
-    updateRowHeight: (rowId: RowHandle, height: Height): void => {},
-
-    updatePinnedRows: (
-      updateFn: (frozenRows: Set<RowHandle>) => Set<RowHandle>
-    ) => {},
-    updatePinnedCols: (
-      updateFn: (frozenCols: Set<ColHandle>) => Set<ColHandle>
-    ) => {},
-
     updateViewportDims: ({ vw, vh }): void => {
-      if (vw != null) {
-        viewModel.grid.viewport_rx = vw;
-      }
-      if (vh != null) {
-        viewModel.grid.viewport_ry = vh;
-      }
+      viewModel.viewportModel.w = vw;
+      viewModel.viewportModel.h = vh;
     },
 
-    updateCellFormat: (
-      handle: CellHandle,
-      fmt: Partial<FormatSpec>
-    ): void => {},
-    updateCellData: (handle: CellHandle, datum: Datum): void => {},
+    // updateCellFormat: (
+    //   handle: CellHandle,
+    //   fmt: Partial<FormatSpec>
+    // ): void => {},
+    updateCellData: (handle: CellHandle<RH, CH>, datum: Datum): void => {
+      const { rh, ch } = handle;
+      dataProvider.updateDatum(rh, ch, datum);
+    },
   };
 };
-
-// export const HeadlessDatasheet = () => {
-//     viewModel: () =>
-// }

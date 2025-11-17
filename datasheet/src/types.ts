@@ -21,14 +21,11 @@ export const As = {
   },
   Ay(n: number): A<Y> {
     return n as A<Y>;
-  }
+  },
   Rx(n: number): R<X> {
     return n as R<X>;
   },
   Ry(n: number): R<Y> {
     return n as R<Y>;
-  }
-
-  
+  },
 };
-

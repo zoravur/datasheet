@@ -15,5 +15,3 @@ export const makeViewportModel = () => {
     h: As.Height(100), // as above
   };
 };
-
-function measureGrid();

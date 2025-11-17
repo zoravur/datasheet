@@ -13,7 +13,9 @@ type GridSliceModel = {
 };
 
 type GridProvider = {
-  measureGrid(vp: ViewportModel): GridSliceModel {
-
-  };
+  measureGrid(vp: ViewportModel): GridSliceModel;
 };
+
+type EditableGrid = {};
+
+export const makeGridProvider = {};

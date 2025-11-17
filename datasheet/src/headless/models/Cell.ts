@@ -56,13 +56,13 @@ export type FormatSpec = {
   hidden?: boolean;
 };
 
-export type CellHandle = {
-  i: I;
-  j: J;
+export type CellHandle<RH, CH> = {
+  rh: RH;
+  ch: CH;
 };
 
-export type CellViewModel = {
+export type CellViewModel<RH, CH> = {
   datum: Datum;
   formatting: FormatSpec;
-  handle: CellHandle;
+  handle: CellHandle<RH, CH>;
 };
