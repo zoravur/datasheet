@@ -1,14 +1,21 @@
 import { Width, Height, X, Y, A, R, I, J, Brand } from "../types";
 import { Index, Ordinal, StubMeta, IndexIterator } from "./Index";
 
-type IndexedStub<Extent extends Width | Height, Handle, Coord extends X | Y> = {
+type IndexedStub<
+  Extent extends Width | Height,
+  Handle,
+  Coord extends A<X> | A<Y>
+> = {
   ordinal: Ordinal; // ordering key
   stub: StubMeta<Extent, Handle>; // the thing you expose
   extent: Extent; // numeric width/height (branded)
 };
 
-class ArrayIndex<Extent extends Width | Height, Handle, Coord extends X | Y>
-  implements Index<Extent, Handle, Coord>
+class ArrayIndex<
+  Extent extends Width | Height,
+  Handle,
+  Coord extends A<X> | A<A<Y>>
+> implements Index<Extent, Handle, Coord>
 {
   private entries: IndexedStub<Extent, Handle, Coord>[] = [];
 
@@ -68,7 +75,7 @@ class ArrayIndex<Extent extends Width | Height, Handle, Coord extends X | Y>
 class ArrayIndexIterator<
   Extent extends Width | Height,
   Handle,
-  Coord extends X | Y
+  Coord extends A<X> | A<Y>
 > implements IndexIterator<StubMeta<Extent, Handle>, Coord>
 {
   private readonly entries: IndexedStub<Extent, Handle, Coord>[];

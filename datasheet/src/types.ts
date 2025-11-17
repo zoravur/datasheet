@@ -29,3 +29,5 @@ export const As = {
     return n as R<Y>;
   },
 };
+
+export type Datum = string | number;

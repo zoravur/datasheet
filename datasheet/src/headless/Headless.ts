@@ -10,12 +10,14 @@ import type { CellViewModel, FormatSpec, CellHandle } from "./models/Cell";
 
 import { Width, Height, As, A, I, J, X, Y } from "../types";
 import { Datum } from "../../demo/mockApi/FieldTypes";
-import { Index } from "./Index";
+import { Index, IndexIterator, StubMeta } from "./Index";
 
-interface ViewModel<RH, CH> {
+interface ViewModel<RH, CH, Cursor> {
   viewportModel: ViewportModel;
+  topLeft: Cursor;
+  editing?: Cursor;
   resolveCellView: (
-    handle: CellHandle<RH, CH> // TODO: Can parameterize this, or remove type parameters altogether
+    cursor: Cursor // TODO: Can parameterize this, or remove type parameters altogether
   ) => CellViewModel<RH, CH>;
 }
 
@@ -29,8 +31,13 @@ interface FormatProvider<RH, CH> {
   // updateFormat(row: RH, col: CH, )
 }
 
+type Cursor<RH, CH> = {
+  row: IndexIterator<StubMeta<Height, RH>, A<Y>>;
+  col: IndexIterator<StubMeta<Width, CH>, A<X>>;
+};
+
 type HeadlessDatasheet<RH, CH, HIndex, VIndex> = {
-  view: () => ViewModel<RH, CH>;
+  view: () => ViewModel<RH, CH, Cursor<RH, CH>>;
 
   // updateColumnWidth(colId: CH, width: Width): void; not always implemented
   // updateRowHeight(rowId: RH, height: Height): void; not always implemented
@@ -53,23 +60,66 @@ type HeadlessDatasheetConfig = {
 export const makeHeadlessDatasheet = <RH, CH>(
   dataProvider: DataProvider<RH, CH>,
   formatProvider: FormatProvider<RH, CH>,
-  horizontalIndex: Index<Width, CH, X>,
-  verticalIndex: Index<Height, RH, Y>,
+  horizontalIndex: Index<Width, CH, A<X>>,
+  verticalIndex: Index<Height, RH, A<Y>>,
   config: HeadlessDatasheetConfig
 ): HeadlessDatasheet<RH, CH, typeof horizontalIndex, typeof verticalIndex> => {
   const viewportModel = makeViewportModel();
 
-  const viewModel: ViewModel<RH, CH> = {
-    viewportModel,
-    resolveCellView: (handle: CellHandle<RH, CH>) => {
-      const { rh, ch } = handle;
+  type HIndex = typeof horizontalIndex;
+  type VIndex = typeof verticalIndex;
 
-      const datum = dataProvider.getDatum(rh, ch);
+  const makeCursor = (
+    horizontalIndex: HIndex,
+    verticalIndex: VIndex,
+    sx: typeof viewportModel.sx,
+    sy: typeof viewportModel.sy
+  ) => {
+    const col = horizontalIndex.bisectLeft(sx);
+    const row = verticalIndex.bisectLeft(sy);
+    return {
+      row,
+      col,
+    };
+  };
+
+  const viewModel: ViewModel<RH, CH, Cursor<RH, CH>> = {
+    viewportModel,
+    topLeft: makeCursor(
+      horizontalIndex,
+      verticalIndex,
+      viewportModel.sx,
+      viewportModel.sy
+    ),
+    resolveCellView: (cursor: Cursor<RH, CH>) => {
+      const { row, col } = cursor;
+
+      const rowStub = row.current();
+      const colStub = col.current();
+
+      if (rowStub == null || colStub == null) {
+        throw new Error("Attempt to resolve invalid stub iterator");
+      }
+
+      const { handle: rh, extent: h } = rowStub;
+      const { handle: ch, extent: w } = colStub;
+
+      const datum = dataProvider.getDatum(rowStub.handle, colStub.handle);
       const formatting = formatProvider.getFormat(rh, ch, datum);
+      const handle = {
+        rh,
+        ch,
+      };
       return {
         datum,
         formatting,
         handle,
+        dims: {
+          x: col.coord,
+          y: row.coord,
+          w,
+          h,
+        },
       };
     },
   };
@@ -87,6 +137,12 @@ export const makeHeadlessDatasheet = <RH, CH>(
     updateViewportScroll: ({ sx, sy }): void => {
       viewModel.viewportModel.sx = sx;
       viewModel.viewportModel.sy = sy;
+      viewModel.topLeft = makeCursor(
+        horizontalIndex,
+        verticalIndex,
+        viewportModel.sx,
+        viewportModel.sy
+      );
     },
     updateViewportDims: ({ vw, vh }): void => {
       viewModel.viewportModel.w = vw;

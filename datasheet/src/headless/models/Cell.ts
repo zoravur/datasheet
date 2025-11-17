@@ -1,6 +1,4 @@
-import { I, J } from "../../types";
-
-type Datum = string | number;
+import { I, J, R, X, Y, Width, Height, Datum } from "../../types";
 
 export type BorderStyle = "none" | "solid" | "dashed" | "dotted" | "double";
 
@@ -65,4 +63,10 @@ export type CellViewModel<RH, CH> = {
   datum: Datum;
   formatting: FormatSpec;
   handle: CellHandle<RH, CH>;
+  dims: {
+    x: R<X>;
+    y: R<Y>;
+    w: Width;
+    h: Height;
+  };
 };

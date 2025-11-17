@@ -22,7 +22,7 @@ export type StubMeta<
 };
 
 // the coord type is the axis being iterated: X for columns, Y for rows
-export interface IndexIterator<S, Coord extends X | Y>
+export interface IndexIterator<S, Coord extends A<X> | A<Y>>
   extends IterableIterator<S> {
   /**
    * Coordinate of the top/left edge of the *current* item, in logical sheet space
@@ -49,7 +49,7 @@ export interface Index<
   // Ordinal extends I | J,
   Extent extends Width | Height,
   Handle,
-  Coord extends X | Y
+  Coord extends A<X> | A<Y>
 > {
   // return the stub with the greatest position <= c
   bisectLeft(c: Coord): IndexIterator<StubMeta<Extent, Handle>, Coord>;
@@ -63,25 +63,29 @@ export interface Index<
   // TODO: Support unregister; update via weak map from Handle
 }
 
-type IndexedStub<Extent extends Width | Height, Handle, Coord extends X | Y> = {
-  ordinal: Ordinal; // stable key used for ordering
-  start: Coord; // start coordinate (e.g., x or y)
-  end: Coord; // end coordinate (for hit-testing ranges)
-  stub: StubMeta<Extent, Handle>; // your metadata
-};
+// type IndexedStub<
+//   Extent extends Width | Height,
+//   Handle,
+//   Coord extends A<X> | A<Y>
+// > = {
+//   ordinal: Ordinal; // stable key used for ordering
+//   start: Coord; // start coordinate (e.g., x or y)
+//   end: Coord; // end coordinate (for hit-testing ranges)
+//   stub: StubMeta<Extent, Handle>; // your metadata
+// };
 
-type HorizontalAxisTypes = {
-  // ord: J;
-  ext: Width;
-  coord: X;
-};
-type VerticalAxisTypes = {
-  // ord: I;
-  ext: Height;
-  coord: Y;
-};
+// type HorizontalAxisTypes = {
+//   // ord: J;
+//   ext: Width;
+//   coord: X;
+// };
+// type VerticalAxisTypes = {
+//   // ord: I;
+//   ext: Height;
+//   coord: Y;
+// };
 
-type Axis = HorizontalAxisTypes | VerticalAxisTypes;
+// type Axis = HorizontalAxisTypes | VerticalAxisTypes;
 
 // const makeUniformIndex = <AX extends Axis, Handle>(
 //   defaultExtent: AX["ext"]
