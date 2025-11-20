@@ -44,23 +44,26 @@ export async function newApi(fakerSeed: number = 1337) {
     const comments: Comment[] = [];
 
     for (let i = 0; i < 4096; ++i) {
-      const resourceId = faker.number.int({ min: 0, max: 2048 + i });
+      const resourceId = faker.number.int({ min: 0, max: 2048 + i - 1 });
 
-      let postId: Id, parentCommentId;
+      let postId: Id;
+      let parentCommentId: Id;
       if (resourceId < 2048) {
-        postId = posts[i].postId;
+        postId = posts[resourceId].postId;
       } else {
-        parentCommentId = comments[2048 - i].commentId;
-        postId = comments[2048 - i].postId;
+        parentCommentId = comments[resourceId - 2048].commentId;
+        postId = comments[resourceId - 2048].postId;
       }
 
-      api.comment.create({
+      const newComment = await api.comment.create({
         postId,
         authorId:
           users[faker.number.int({ min: 0, max: users.length - 1 })].userId,
         parentCommentId,
         body: faker.lorem.sentence(),
       });
+
+      comments.push(newComment);
     }
   }
 

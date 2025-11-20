@@ -1,0 +1,46 @@
+Directory structure:
+└── scripts/
+    ├── build.ts
+    └── serve.ts
+
+================================================
+FILE: build.ts
+================================================
+import * as esbuild from "esbuild";
+import { copy } from "esbuild-plugin-copy";
+
+export const contextOpts = {
+  entryPoints: ["demo/app.ts"],
+  bundle: true,
+  outdir: "www/js/demo.js",
+  // outfile: ["js/demo.js"],
+  plugins: [
+    copy({
+      resolveFrom: "cwd",
+      assets: {
+        from: ["./public/*"],
+        to: ["./www"],
+      },
+    }),
+  ],
+};
+
+await esbuild.build(contextOpts);
+
+
+
+================================================
+FILE: serve.ts
+================================================
+import * as esbuild from "esbuild";
+import { contextOpts } from "./build";
+
+let ctx = await esbuild.context(contextOpts);
+
+let { hosts, port } = await ctx.serve({
+  servedir: "www",
+});
+
+console.log(`Running on ${hosts}:${port}`);
+
+

@@ -1,5 +1,5 @@
 import { Id, Datum } from "./FieldTypes";
-import { ConditionalExcept, ConditionalKeys, Except } from "type-fest";
+import type { ConditionalExcept, ConditionalKeys, Except } from "type-fest";
 import { ReadQueryParams } from "./ReadQueryParams";
 import { ResourceMap } from "./resources";
 

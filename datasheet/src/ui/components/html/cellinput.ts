@@ -1,6 +1,6 @@
 import { h, VNodeStyle, type VNode } from "snabbdom";
-import { CellViewModel } from "../../headless/models/Cell";
-import { A, X, Y, Width, Height } from "../../types";
+import { CellViewModel } from "../../../headless/models/Cell";
+import { A, X, Y, Width, Height } from "../../../types";
 
 const makeCellPositioning = (
   x: A<X>,

@@ -1,9 +1,7 @@
 import { Id, Datum } from "./FieldTypes";
 import { AssertAssignable } from "../util";
 import { PrimaryIdKey, ResourceApi, ServerManagedField } from "./derived";
-import { Exact, UnionToTuple } from "type-fest";
 import { DeleteStatus } from "./derived";
-import { Except } from "type-fest";
 
 export type Resource = Record<string, Datum>;
 

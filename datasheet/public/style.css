@@ -1,0 +1,11 @@
+html, body {
+    height: 100vh;
+    padding: 0px;
+    margin: 0px;
+}
+
+#demo {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}

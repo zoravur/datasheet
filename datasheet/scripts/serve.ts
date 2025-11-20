@@ -7,4 +7,4 @@ let { hosts, port } = await ctx.serve({
   servedir: "www",
 });
 
-console.log(`Running on ${hosts}:${port}`);
+console.log(`Running on ${hosts[0]}:${port}`);

@@ -1,5 +1,5 @@
-import { FormatSpec } from "../headless/models/Cell";
-import type { R, X, Y, Width, Height, Datum } from "../types";
+import { FormatSpec } from "../../../headless/models/Cell";
+import type { R, X, Y, Width, Height, Datum } from "../../../types";
 
 export const drawCell = (
   ctx: CanvasRenderingContext2D,
@@ -167,5 +167,3 @@ export const drawCell = (
 
   ctx.restore();
 };
-
-export default drawCell;

@@ -8,11 +8,11 @@ import {
 import { type ViewportModel, makeViewportModel } from "./models/Viewport";
 import type { CellViewModel, FormatSpec, CellHandle } from "./models/Cell";
 
-import { Width, Height, As, A, I, J, X, Y } from "../types";
-import { Datum } from "../../demo/mockApi/FieldTypes";
-import { Index, IndexIterator, StubMeta } from "./Index";
+import type { Width, Height, As, A, I, J, X, Y } from "../types";
+import type { Datum } from "../../demo/mockApi/FieldTypes";
+import type { Index, IndexIterator, StubMeta } from "./Index";
 
-interface ViewModel<RH, CH, Cursor> {
+export interface ViewModel<RH, CH, Cursor> {
   viewportModel: ViewportModel;
   topLeft: Cursor;
   editing?: Cursor;
@@ -21,35 +21,48 @@ interface ViewModel<RH, CH, Cursor> {
   ) => CellViewModel<RH, CH>;
 }
 
-interface DataProvider<RH, CH> {
-  getDatum(row: RH, col: CH): Datum;
-  updateDatum(row: RH, col: CH, datum: Datum): void;
-}
-
-interface FormatProvider<RH, CH> {
-  getFormat(row: RH, col: CH, value: Datum): FormatSpec;
-  // updateFormat(row: RH, col: CH, )
-}
-
-type Cursor<RH, CH> = {
-  row: IndexIterator<StubMeta<Height, RH>, A<Y>>;
-  col: IndexIterator<StubMeta<Width, CH>, A<X>>;
-};
-
-type HeadlessDatasheet<RH, CH, HIndex, VIndex> = {
-  view: () => ViewModel<RH, CH, Cursor<RH, CH>>;
-
+export interface ViewController<RH, CH, Cursor> {
   // updateColumnWidth(colId: CH, width: Width): void; not always implemented
   // updateRowHeight(rowId: RH, height: Height): void; not always implemented
 
   // updatePinnedRows(updateFn: (frozenRows: Set<RH>) => Set<RH>): void; not always implemented
   // updatePinnedCols(updateFn: (frozenCols: Set<CH>) => Set<CH>): void; not always implemented
 
-  updateViewportScroll(dims: { sx: A<X>; sy: A<Y> }): void;
-  updateViewportDims(dims: { vw: Width; vh: Height }): void;
+  updateViewportScroll(
+    viewModel: ViewModel<RH, CH, Cursor>,
+    dims: { sx: A<X>; sy: A<Y> }
+  ): ViewModel<RH, CH, Cursor>;
+  updateViewportDims(
+    viewModel: ViewModel<RH, CH, Cursor>,
+    dims: { vw: Width; vh: Height }
+  ): ViewModel<RH, CH, Cursor>;
 
   // updateCellFormat(handle: CellHandle<RH, CH>, fmt: Partial<FormatSpec>): void; not always implemented
-  updateCellData(handle: CellHandle<RH, CH>, datum: Datum): void;
+  updateCellData(
+    viewModel: ViewModel<RH, CH, Cursor>,
+    handle: CellHandle<RH, CH>,
+    datum: Datum
+  ): ViewModel<RH, CH, Cursor>;
+}
+
+export interface DataProvider<RH, CH> {
+  getDatum(row: RH, col: CH): Datum;
+  updateDatum(row: RH, col: CH, datum: Datum): void;
+}
+
+export interface FormatProvider<RH, CH> {
+  getFormat(row: RH, col: CH, value: Datum): FormatSpec;
+  // updateFormat(row: RH, col: CH, )
+}
+
+export type Cursor<RH, CH> = {
+  row: IndexIterator<StubMeta<Height, RH>, A<Y>>;
+  col: IndexIterator<StubMeta<Width, CH>, A<X>>;
+};
+
+export type HeadlessDatasheet<RH, CH, HIndex, VIndex> = {
+  view: () => ViewModel<RH, CH, Cursor<RH, CH>>;
+  controller: () => ViewController<RH, CH, Cursor<RH, CH>>;
 };
 
 type HeadlessDatasheetConfig = {
@@ -129,33 +142,35 @@ export const makeHeadlessDatasheet = <RH, CH>(
       return viewModel;
     },
 
-    // updateColumnWidth: (colId: ColHandle, width: Width): void => {
-    //   viewModel.grid.cols.patch(colId, { w: width });
-    // },
-    // updateRowHeight: (rowId: RowHandle, height: Height): void => {},
+    controller: () => {
+      return {
+        updateViewportScroll: (viewModel, { sx, sy }): typeof viewModel => {
+          viewModel.viewportModel.sx = sx;
+          viewModel.viewportModel.sy = sy;
+          viewModel.topLeft = makeCursor(
+            horizontalIndex,
+            verticalIndex,
+            viewportModel.sx,
+            viewportModel.sy
+          );
+          return viewModel;
+        },
+        updateViewportDims: (viewModel, { vw, vh }): typeof viewModel => {
+          viewModel.viewportModel.w = vw;
+          viewModel.viewportModel.h = vh;
+          return viewModel;
+        },
 
-    updateViewportScroll: ({ sx, sy }): void => {
-      viewModel.viewportModel.sx = sx;
-      viewModel.viewportModel.sy = sy;
-      viewModel.topLeft = makeCursor(
-        horizontalIndex,
-        verticalIndex,
-        viewportModel.sx,
-        viewportModel.sy
-      );
-    },
-    updateViewportDims: ({ vw, vh }): void => {
-      viewModel.viewportModel.w = vw;
-      viewModel.viewportModel.h = vh;
-    },
-
-    // updateCellFormat: (
-    //   handle: CellHandle,
-    //   fmt: Partial<FormatSpec>
-    // ): void => {},
-    updateCellData: (handle: CellHandle<RH, CH>, datum: Datum): void => {
-      const { rh, ch } = handle;
-      dataProvider.updateDatum(rh, ch, datum);
+        updateCellData: (
+          viewModel,
+          handle: CellHandle<RH, CH>,
+          datum: Datum
+        ): typeof viewModel => {
+          const { rh, ch } = handle;
+          dataProvider.updateDatum(rh, ch, datum);
+          return viewModel;
+        },
+      };
     },
   };
 };

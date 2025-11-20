@@ -11,10 +11,10 @@ type IndexedStub<
   extent: Extent; // numeric width/height (branded)
 };
 
-class ArrayIndex<
+export class ArrayIndex<
   Extent extends Width | Height,
   Handle,
-  Coord extends A<X> | A<A<Y>>
+  Coord extends A<X> | A<Y>
 > implements Index<Extent, Handle, Coord>
 {
   private entries: IndexedStub<Extent, Handle, Coord>[] = [];
